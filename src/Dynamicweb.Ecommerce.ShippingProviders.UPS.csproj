@@ -19,9 +19,8 @@
     <SymbolPackageFormat>snupkg</SymbolPackageFormat>
   </PropertyGroup>
   <ItemGroup>
-    <PackageReference Include="Dynamicweb" Version="9.10.28" />
-    <PackageReference Include="Dynamicweb.Core" Version="3.1.0" />
-    <PackageReference Include="Dynamicweb.Ecommerce" Version="1.10.87" />
-    <PackageReference Include="Dynamicweb.Extensibility" Version="4.0.2" />
+    <PackageReference Include="Dynamicweb" Version="10.0.0-*" />
+    <PackageReference Include="Dynamicweb.Core" Version="10.0.0-*" />
+    <PackageReference Include="Dynamicweb.Ecommerce" Version="10.0.0-*" />
   </ItemGroup>
 </Project>
