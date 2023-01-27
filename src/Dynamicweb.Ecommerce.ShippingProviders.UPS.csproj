@@ -2,7 +2,8 @@
   <PropertyGroup>
     <Version>4.0.1</Version>
     <AssemblyVersion>1.0.0.0</AssemblyVersion>
-    <Description>UPS</Description>
+	  <Title>UPS</Title>
+    <Description>UPS Delivery</Description>
   </PropertyGroup>
   <PropertyGroup>
     <PackageProjectUrl>https://doc.dynamicweb.com/</PackageProjectUrl>
