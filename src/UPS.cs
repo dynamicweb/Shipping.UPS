@@ -16,7 +16,7 @@ namespace Dynamicweb.Ecommerce.ShippingProviders.UPS
     /// <summary>
     /// UPS Shipping Service
     /// </summary>
-    [AddInName("UPS"), AddInDescription("The United States Postal Service. All services considered are USA domestic shipping services")]
+    [AddInName("UPS"), AddInDescription("UPS Delivery provider")]
     public class UPS : ShippingProvider, IDropDownOptions
     {
         #region Parameters
