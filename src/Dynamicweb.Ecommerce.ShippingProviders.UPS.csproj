@@ -1,27 +1,32 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
-  <PropertyGroup>
-    <Version>4.0.1</Version>
-    <AssemblyVersion>1.0.0.0</AssemblyVersion>
-	  <Title>UPS</Title>
-    <Description>UPS Delivery</Description>
-  </PropertyGroup>
-  <PropertyGroup>
-    <PackageProjectUrl>https://doc.dynamicweb.com/</PackageProjectUrl>
-	<PackageTags>Dynamicweb dw10 addin ecommerce shipping</PackageTags>
-    <Product>Dynamicweb CMS</Product>
-    <Company>Dynamicweb Software A/S</Company>
-    <Authors>Dynamicweb Software A/S</Authors>
-    <Copyright>Copyright © 2020 Dynamicweb Software A/S</Copyright>
-  </PropertyGroup>
-  <PropertyGroup>
-    <TargetFramework>net7.0</TargetFramework>
-    <GeneratePackageOnBuild>true</GeneratePackageOnBuild>
-    <IncludeSymbols>true</IncludeSymbols>
-    <SymbolPackageFormat>snupkg</SymbolPackageFormat>
-  </PropertyGroup>
-  <ItemGroup>
-    <PackageReference Include="Dynamicweb" Version="10.0.0-*" />
-    <PackageReference Include="Dynamicweb.Core" Version="10.0.0-*" />
-    <PackageReference Include="Dynamicweb.Ecommerce" Version="10.0.0-*" />
-  </ItemGroup>
+	<PropertyGroup>
+		<VersionPrefix>10.0.0</VersionPrefix>
+		<VersionSuffix>Alpha0001</VersionSuffix>
+		<AssemblyVersion>1.0.0.0</AssemblyVersion>
+		<Title>UPS</Title>
+		<Description>UPS Delivery</Description>
+	</PropertyGroup>
+	<PropertyGroup>
+		<PackageProjectUrl>https://doc.dynamicweb.com/</PackageProjectUrl>
+		<PackageTags>Dynamicweb dw10 addin ecommerce shipping</PackageTags>
+		<Product>Dynamicweb CMS</Product>
+		<Company>Dynamicweb Software A/S</Company>
+		<Authors>Dynamicweb Software A/S</Authors>
+		<Copyright>Copyright © 2020 Dynamicweb Software A/S</Copyright>
+	</PropertyGroup>
+	<PropertyGroup>
+		<TargetFramework>net7.0</TargetFramework>
+		<GeneratePackageOnBuild>true</GeneratePackageOnBuild>
+		<IncludeSymbols>true</IncludeSymbols>
+		<EmbedUntrackedSources>true</EmbedUntrackedSources>
+		<ContinuousIntegrationBuild >true</ContinuousIntegrationBuild>
+		<PublishRepositoryUrl>true</PublishRepositoryUrl>
+		<SymbolPackageFormat>snupkg</SymbolPackageFormat>
+	</PropertyGroup>
+	<ItemGroup>
+		<PackageReference Include="Dynamicweb" Version="10.0.0-*" />
+		<PackageReference Include="Dynamicweb.Core" Version="10.0.0-*" />
+		<PackageReference Include="Dynamicweb.Ecommerce" Version="10.0.0-*" />
+		<PackageReference Include="Microsoft.SourceLink.GitHub" Version="1.1.1" PrivateAssets="All"/>
+	</ItemGroup>
 </Project>
