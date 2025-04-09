@@ -15,18 +15,20 @@
 		<Copyright>Copyright © 2020 Dynamicweb Software A/S</Copyright>
 	</PropertyGroup>
 	<PropertyGroup>
-		<TargetFramework>net7.0</TargetFramework>
+		<TargetFramework>net8.0</TargetFramework>
 		<GeneratePackageOnBuild>true</GeneratePackageOnBuild>
 		<IncludeSymbols>true</IncludeSymbols>
 		<EmbedUntrackedSources>true</EmbedUntrackedSources>
 		<ContinuousIntegrationBuild >true</ContinuousIntegrationBuild>
 		<PublishRepositoryUrl>true</PublishRepositoryUrl>
 		<SymbolPackageFormat>snupkg</SymbolPackageFormat>
+		<Nullable>enable</Nullable>
+		<WarningsAsErrors>nullable</WarningsAsErrors>
 	</PropertyGroup>
 	<ItemGroup>
-		<PackageReference Include="Dynamicweb" Version="10.0.0-*" />
-		<PackageReference Include="Dynamicweb.Core" Version="10.0.0-*" />
-		<PackageReference Include="Dynamicweb.Ecommerce" Version="10.0.0-*" />
+		<PackageReference Include="Dynamicweb" Version="10.14.0" />
+		<PackageReference Include="Dynamicweb.Core" Version="10.14.0" />
+		<PackageReference Include="Dynamicweb.Ecommerce" Version="10.14.0" />
 		<PackageReference Include="Microsoft.SourceLink.GitHub" Version="1.1.1" PrivateAssets="All"/>
 	</ItemGroup>
 </Project>

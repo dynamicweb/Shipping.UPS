@@ -2,13 +2,14 @@
 using Dynamicweb.Ecommerce.Cart;
 using Dynamicweb.Ecommerce.Orders;
 using Dynamicweb.Ecommerce.Prices;
+using Dynamicweb.Environment;
 using Dynamicweb.Extensibility.AddIns;
 using Dynamicweb.Extensibility.Editors;
 using System;
-using System.Collections;
 using System.Collections.Generic;
-using System.IO;
-using System.Net;
+using System.Net.Http;
+using System.Net.Http.Headers;
+using System.Threading.Tasks;
 using System.Xml;
 
 namespace Dynamicweb.Ecommerce.ShippingProviders.UPS
@@ -17,45 +18,45 @@ namespace Dynamicweb.Ecommerce.ShippingProviders.UPS
     /// UPS Shipping Service
     /// </summary>
     [AddInName("UPS"), AddInDescription("UPS Delivery provider")]
-    public class UPS : ShippingProvider, IDropDownOptions
+    public class UPS : ShippingProvider, IParameterOptions
     {
         #region Parameters
 
         [AddInParameter("User ID"), AddInParameterEditor(typeof(TextParameterEditor), "size=80")]
-        public string UserID { get; set; }
+        public string UserID { get; set; } = "";
 
         [AddInParameter("Password"), AddInParameterEditor(typeof(TextParameterEditor), "size=80")]
-        public string Password { get; set; }
+        public string Password { get; set; } = "";
 
         [AddInParameter("Access Key"), AddInParameterEditor(typeof(TextParameterEditor), "size=80")]
-        public string AccessKey { get; set; }
+        public string AccessKey { get; set; } = "";
 
         [AddInParameter("Rate service URL"), AddInParameterEditor(typeof(TextParameterEditor), "size=80")]
         public string ServiceURL { get; set; }
 
         [AddInParameter("Delivery Service"), AddInParameterEditor(typeof(DropDownParameterEditor), "SortBy=Value")]
-        public string DeliveryService { get; set; }
+        public string DeliveryService { get; set; } = "";
 
         [AddInParameter("Pickup Type"), AddInParameterEditor(typeof(DropDownParameterEditor), "SortBy=Value")]
-        public string PickupType { get; set; }
+        public string PickupType { get; set; } = "";
 
         [AddInParameter("Container Type"), AddInParameterEditor(typeof(DropDownParameterEditor), "SortBy=Value")]
-        public string ContainerType { get; set; }
+        public string ContainerType { get; set; } = "";
 
         [AddInParameter("Customer Classification"), AddInParameterEditor(typeof(DropDownParameterEditor), "SortBy=Value")]
-        public string CustomerClassification { get; set; }
+        public string CustomerClassification { get; set; } = "";
 
         [AddInParameter("UPS Account Number"), AddInParameterEditor(typeof(TextParameterEditor), "")]
-        public string ShipperNumber { get; set; }
+        public string ShipperNumber { get; set; } = "";
 
         [AddInParameter("Group by manufacturer"), AddInParameterEditor(typeof(YesNoParameterEditor), "")]
         public bool GroupByManufacturer { get; set; }
 
         [AddInParameter("Number Of Products Per Package"), AddInParameterEditor(typeof(TextParameterEditor), "")]
-        public string NumberOfProductsPerPackage { get; set; }
+        public string NumberOfProductsPerPackage { get; set; } = "";
 
         [AddInParameter("Dimensions Unit"), AddInParameterEditor(typeof(DropDownParameterEditor), "")]
-        public string DimensionsUnitOfMeasurement { get; set; }
+        public string DimensionsUnitOfMeasurement { get; set; } = "";
 
         [AddInParameter("Default Length"), AddInParameterEditor(typeof(TextParameterEditor), "")]
         public string Length { get; set; }
@@ -67,34 +68,34 @@ namespace Dynamicweb.Ecommerce.ShippingProviders.UPS
         public string Height { get; set; }
 
         [AddInParameter("Weight Unit"), AddInParameterEditor(typeof(DropDownParameterEditor), "")]
-        public string WeightUnitOfMeasurement { get; set; }
+        public string WeightUnitOfMeasurement { get; set; } = "";
 
         [AddInParameter("Company Name"), AddInParameterEditor(typeof(TextParameterEditor), "")]
-        public string CompanyName { get; set; }
+        public string CompanyName { get; set; } = "";
 
         [AddInParameter("Attention Name"), AddInParameterEditor(typeof(TextParameterEditor), "")]
-        public string AttentionName { get; set; }
+        public string AttentionName { get; set; } = "";
 
         [AddInParameter("Phone Number"), AddInParameterEditor(typeof(TextParameterEditor), "")]
-        public string PhoneNumber { get; set; }
+        public string PhoneNumber { get; set; } = "";
 
         [AddInParameter("Fax Number"), AddInParameterEditor(typeof(TextParameterEditor), "")]
-        public string FaxNumber { get; set; }
+        public string FaxNumber { get; set; } = "";
 
         [AddInParameter("Origination Street Address"), AddInParameterEditor(typeof(TextParameterEditor), "")]
-        public string StreetAddress { get; set; }
+        public string StreetAddress { get; set; } = "";
 
         [AddInParameter("Origination Street Address 2"), AddInParameterEditor(typeof(TextParameterEditor), "")]
-        public string StreetAddress2 { get; set; }
+        public string StreetAddress2 { get; set; } = "";
 
         [AddInParameter("Origination City"), AddInParameterEditor(typeof(TextParameterEditor), "")]
-        public string City { get; set; }
+        public string City { get; set; } = "";
 
         [AddInParameter("Origination State"), AddInParameterEditor(typeof(DropDownParameterEditor), "SortBy=Value")]
-        public string StateProvinceCode { get; set; }
+        public string StateProvinceCode { get; set; } = "";
 
         [AddInParameter("Origination Zip Code"), AddInParameterEditor(typeof(TextParameterEditor), "")]
-        public string PostalCode { get; set; }
+        public string PostalCode { get; set; } = "";
 
         [AddInParameter("XML Log"), AddInParameterEditor(typeof(YesNoParameterEditor), ""), AddInDescription("Create a log of the request and response from UPS")]
         public bool XMLLog { get; set; }
@@ -119,12 +120,15 @@ namespace Dynamicweb.Ecommerce.ShippingProviders.UPS
         /// </summary>
         /// <param name="Order">The order.</param>
         /// <returns>Returns shipping fee for the specified order</returns>
-        public override PriceRaw CalculateShippingFee(Order order)
+        public override PriceRaw? CalculateShippingFee(Order order)
         {
             var shippingXml = string.Empty;
-            PriceRaw rate = null;
+            PriceRaw? rate = null;
             order.ShippingProviderErrors.Clear();
             order.ShippingProviderWarnings.Clear();
+            var context = Context.Current;
+            if (context is null)
+                throw new ContextUnavailableException();
 
             try
             {
@@ -133,8 +137,8 @@ namespace Dynamicweb.Ecommerce.ShippingProviders.UPS
                     var sequrityXmlString = string.Empty;
                     shippingXml = CreateRequest(order, ref sequrityXmlString);
 
-                    var rateRequest = ShippingProviderHelper.CheckIsRateRequestCached(ShippingID, shippingXml);
-                    if (rateRequest.Rate > 0 || ShippingProviderHelper.IsThisShippingRequestWasProcessed(ShippingID))
+                    var rateRequest = ShippingProviderHelper.CheckIsRateRequestCached(ShippingID, shippingXml, context);
+                    if (rateRequest.Rate > 0 || ShippingProviderHelper.IsThisShippingRequestWasProcessed(ShippingID, context))
                     {
                         rate = new PriceRaw(rateRequest.Rate, Services.Currencies.GetCurrency(rateRequest.Currency));
                         if (rateRequest.Warning != null)
@@ -151,9 +155,10 @@ namespace Dynamicweb.Ecommerce.ShippingProviders.UPS
                         if (XMLLog) SaveLog(shippingXml, true);
 
                         var xmlDocument = new XmlDocument();
-                        using (var webResponse = ProcessRequest(sequrityXmlString, shippingXml))
+                        
+                        using (var webResponse = Task.Run(() => ProcessRequest(sequrityXmlString, shippingXml)).Result)
                         {
-                            xmlDocument.Load(webResponse.GetResponseStream());
+                            xmlDocument.Load(Task.Run(() => webResponse.Content.ReadAsStringAsync()).Result);
                         }
                         if (XMLLog) SaveXmlLog(xmlDocument, false);
                         rate = ProcessResponse(xmlDocument, order);
@@ -167,7 +172,7 @@ namespace Dynamicweb.Ecommerce.ShippingProviders.UPS
             }
 
             ShippingProviderHelper.CacheRateRequest(ShippingID, shippingXml, rate == null ? 0 : rate.Price, rate == null ? order.CurrencyCode : rate.Currency.Code, order.ShippingProviderWarnings, order.ShippingProviderErrors);
-            ShippingProviderHelper.SetShippingRequestIsProcessed(ShippingID);
+            ShippingProviderHelper.SetShippingRequestIsProcessed(ShippingID, context);
 
             return rate;
         }
@@ -470,36 +475,29 @@ namespace Dynamicweb.Ecommerce.ShippingProviders.UPS
             return xmlDocument.InnerXml;
         }
 
-        private WebResponse ProcessRequest(string sequrityXml, string shippingXml)
+        private async Task<HttpResponseMessage> ProcessRequest(string sequrityXml, string shippingXml)
         {
-            var webRequest = WebRequest.Create(ServiceURL);
-            webRequest.Method = "POST";
-            webRequest.ContentType = "text/xml";
-            webRequest.Proxy = null;
-
-            var writer = new StreamWriter(webRequest.GetRequestStream());
-            writer.WriteLine(sequrityXml);
-            writer.WriteLine(shippingXml);
-            writer.Close();
-
-            webRequest.Timeout = 30000;
-            return webRequest.GetResponse();
+            using (var client = new HttpClient())
+            {
+                client.Timeout = new TimeSpan(0, 0, 0, 30);
+                return await client.PostAsync(ServiceURL, new StringContent(sequrityXml + shippingXml, new MediaTypeHeaderValue("text/xml")));
+            }
         }
 
         private PriceRaw ProcessResponse(XmlDocument xmlDocument, Order order)
         {
             var statusNode = xmlDocument.SelectSingleNode("/RatingServiceSelectionResponse/Response/ResponseStatusCode");
-            if (statusNode.InnerText == "0")
+            if (statusNode?.InnerText == "0")
             {
-                XmlNode errNode = xmlDocument.SelectSingleNode("/RatingServiceSelectionResponse/Response/Error");
+                XmlNode? errNode = xmlDocument.SelectSingleNode("/RatingServiceSelectionResponse/Response/Error");
 
-                throw new Exception(errNode.SelectSingleNode("ErrorDescription").InnerText);
+                throw new Exception(errNode?.SelectSingleNode("ErrorDescription")?.InnerText);
             }
             else
             {
                 var rateNode = xmlDocument.SelectSingleNode("/RatingServiceSelectionResponse/RatedShipment/TotalCharges");
-                string currencyCode = rateNode.SelectSingleNode("CurrencyCode").InnerText;
-                double rate = Converter.ToDouble(rateNode.SelectSingleNode("MonetaryValue").InnerText);
+                string currencyCode = rateNode?.SelectSingleNode("CurrencyCode")?.InnerText ?? "";
+                double rate = Converter.ToDouble(rateNode?.SelectSingleNode("MonetaryValue")?.InnerText);
 
                 var warningNodes = xmlDocument.SelectNodes("RatingServiceSelectionResponse/RatedShipment/RatedShipmentWarning");
                 if (warningNodes != null)
@@ -509,7 +507,7 @@ namespace Dynamicweb.Ecommerce.ShippingProviders.UPS
                         order.ShippingProviderWarnings.Add(warningNode.InnerText);
                     }
                 }
-                
+
                 return new PriceRaw(rate, Services.Currencies.GetCurrency(currencyCode));
             }
         }
@@ -521,117 +519,117 @@ namespace Dynamicweb.Ecommerce.ShippingProviders.UPS
         /// <summary>
         /// Retrieves options
         /// </summary>
-        /// <param name="optionName">Delivery Service, Pickup Type, Container Type, Customer Classification, Dimensions Unit, Weight Unit or Origination State</param>
+        /// <param name="parameterName">Delivery Service, Pickup Type, Container Type, Customer Classification, Dimensions Unit, Weight Unit or Origination State</param>
         /// <returns>HashTable with options having index and description data</returns>
-        public Hashtable GetOptions(string optionName)
+        public IEnumerable<ParameterOption> GetParameterOptions(string parameterName)
         {
-            var options = new Hashtable();
+            var options = new List<ParameterOption>();
 
-            switch (optionName)
+            switch (parameterName)
             {
                 case "Delivery Service":
-                    options.Add("01", "Next Day Air");
-                    options.Add("14", "Next Day Air Early AM");
-                    options.Add("13", "Next Day Air Saver");
-                    options.Add("59", "2nd Day Air AM");
-                    options.Add("02", "2nd Day Air");
-                    options.Add("12", "3 Day Select");
-                    options.Add("03", "Ground (1-5 Business Days)");
+                    options.Add(new("Next Day Air", "01"));
+                    options.Add(new("Next Day Air Early AM", "14"));
+                    options.Add(new("Next Day Air Saver", "13"));
+                    options.Add(new("2nd Day Air AM", "59"));
+                    options.Add(new("2nd Day Air", "02"));
+                    options.Add(new("3 Day Select", "12"));
+                    options.Add(new("Ground (1-5 Business Days)", "03"));
                     break;
 
                 case "Pickup Type":
-                    options.Add("01", "RDP - Daily Pickup");
-                    options.Add("03", "CC - Customer Counter");
-                    options.Add("06", "OTP - One Time Pickup");
-                    options.Add("07", "OCA - On Call Air");
-                    options.Add("19", "LC - Letter Center");
-                    options.Add("20", "ASC – Air Service Center");
+                    options.Add(new("RDP - Daily Pickup", "01"));
+                    options.Add(new("CC - Customer Counter", "03"));
+                    options.Add(new("OTP - One Time Pickup", "06"));
+                    options.Add(new("OCA - On Call Air", "07"));
+                    options.Add(new("LC - Letter Center", "19"));
+                    options.Add(new("ASC – Air Service Center", "20"));
                     break;
 
                 case "Container Type":
-                    options.Add("00", "UNKNOWN");
-                    options.Add("01", "UPS Letter");
-                    options.Add("02", "Package");
-                    options.Add("03", "Tube");
-                    options.Add("04", "Pak");
-                    options.Add("21", "Express Box");
-                    options.Add("24", "25KG Box");
-                    options.Add("25", "10KG Box");
-                    options.Add("30", "Pallet");
-                    options.Add("2a", "Small Express Box");
-                    options.Add("2b", "Medium Express Box");
-                    options.Add("2c", "Large Express Box");
+                    options.Add(new("UNKNOWN", "00"));
+                    options.Add(new("UPS Letter", "01"));
+                    options.Add(new("Package", "02"));
+                    options.Add(new("Tube", "03"));
+                    options.Add(new("Pak", "04"));
+                    options.Add(new("Express Box", "21"));
+                    options.Add(new("25KG Box", "24"));
+                    options.Add(new("10KG Box", "25"));
+                    options.Add(new("Pallet", "30"));
+                    options.Add(new("Small Express Box", "2a"));
+                    options.Add(new("Medium Express Box", "2b"));
+                    options.Add(new("Large Express Box", "2c"));
                     break;
 
                 case "Customer Classification":
-                    options.Add("00", "Rates Associated with Shipper Number");
-                    options.Add("01", "Daily Rates");
-                    options.Add("04", "Retail Rates");
-                    options.Add("53", "Standard List Rates");
+                    options.Add(new("Rates Associated with Shipper Number", "00"));
+                    options.Add(new("Daily Rates", "01"));
+                    options.Add(new("Retail Rates", "04"));
+                    options.Add(new("Standard List Rates", "53"));
                     break;
 
                 case "Dimensions Unit":
-                    options.Add("IN", "Inches");
-                    options.Add("CM", "Centimeters");
+                    options.Add(new("Inches", "IN"));
+                    options.Add(new("Centimeters", "CM"));
                     break;
 
                 case "Weight Unit":
-                    options.Add("LBS", "Pounds");
-                    options.Add("KGS", "Kilograms");
+                    options.Add(new("Pounds", "LBS"));
+                    options.Add(new("Kilograms", "KGS"));
                     break;
 
                 case "Origination State":
-                    options.Add("AL", "Alabama");
-                    options.Add("AK", "Alaska");
-                    options.Add("AZ", "Arizona");
-                    options.Add("AR", "Arkansas");
-                    options.Add("CA", "California");
-                    options.Add("CO", "Colorado");
-                    options.Add("CT", "Connecticut");
-                    options.Add("DE", "Delaware");
-                    options.Add("DC", "District of Columbia");
-                    options.Add("FL", "Florida");
-                    options.Add("GA", "Georgia");
-                    options.Add("HI", "Hawaii");
-                    options.Add("ID", "Idaho");
-                    options.Add("IL", "Illinois");
-                    options.Add("IN", "Indiana");
-                    options.Add("IA", "Iowa");
-                    options.Add("KS", "Kansas");
-                    options.Add("KY", "Kentucky");
-                    options.Add("LA", "Louisiana");
-                    options.Add("ME", "Maine");
-                    options.Add("MD", "Maryland");
-                    options.Add("MA", "Massachusetts");
-                    options.Add("MI", "Michigan");
-                    options.Add("MN", "Minnesota");
-                    options.Add("MS", "Mississippi");
-                    options.Add("MO", "Missouri");
-                    options.Add("MT", "Montana");
-                    options.Add("NE", "Nebraska");
-                    options.Add("NV", "Nevada");
-                    options.Add("NH", "New Hampshire");
-                    options.Add("NJ", "New Jersey");
-                    options.Add("NM", "New Mexico");
-                    options.Add("NY", "New York");
-                    options.Add("NC", "North Carolina");
-                    options.Add("ND", "North Dakota");
-                    options.Add("OH", "Ohio");
-                    options.Add("OK", "Oklahoma");
-                    options.Add("OR", "Oregon");
-                    options.Add("PA", "Pennsylvania");
-                    options.Add("RI", "Rhode Island");
-                    options.Add("SC", "South Carolina");
-                    options.Add("SD", "South Dakota");
-                    options.Add("TN", "Tennessee");
-                    options.Add("TX", "Texas");
-                    options.Add("UT", "Utah");
-                    options.Add("VT", "Vermont");
-                    options.Add("VA", "Virginia");
-                    options.Add("WA", "Washington");
-                    options.Add("WV", "West Virginia");
-                    options.Add("WI", "Wisconsin");
-                    options.Add("WY", "Wyoming");
+                    options.Add(new("Alabama", "AL"));
+                    options.Add(new("Alaska", "AK"));
+                    options.Add(new("Arizona", "AZ"));
+                    options.Add(new("Arkansas", "AR"));
+                    options.Add(new("California", "CA"));
+                    options.Add(new("Colorado", "CO"));
+                    options.Add(new("Connecticut", "CT"));
+                    options.Add(new("Delaware", "DE"));
+                    options.Add(new("District of Columbia", "DC"));
+                    options.Add(new("Florida", "FL"));
+                    options.Add(new("Georgia", "GA"));
+                    options.Add(new("Hawaii", "HI"));
+                    options.Add(new("Idaho", "ID"));
+                    options.Add(new("Illinois", "IL"));
+                    options.Add(new("Indiana", "IN"));
+                    options.Add(new("Iowa", "IA"));
+                    options.Add(new("Kansas", "KS"));
+                    options.Add(new("Kentucky", "KY"));
+                    options.Add(new("Louisiana", "LA"));
+                    options.Add(new("Maine", "ME"));
+                    options.Add(new("Maryland", "MD"));
+                    options.Add(new("Massachusetts", "MA"));
+                    options.Add(new("Michigan", "MI"));
+                    options.Add(new("Minnesota", "MN"));
+                    options.Add(new("Mississippi", "MS"));
+                    options.Add(new("Missouri", "MO"));
+                    options.Add(new("Montana", "MT"));
+                    options.Add(new("Nebraska", "NE"));
+                    options.Add(new("Nevada", "NV"));
+                    options.Add(new("New Hampshire", "NH"));
+                    options.Add(new("New Jersey", "NJ"));
+                    options.Add(new("New Mexico", "NM"));
+                    options.Add(new("New York", "NY"));
+                    options.Add(new("North Carolina", "NC"));
+                    options.Add(new("North Dakota", "ND"));
+                    options.Add(new("Ohio", "OH"));
+                    options.Add(new("Oklahoma", "OK"));
+                    options.Add(new("Oregon", "OR"));
+                    options.Add(new("Pennsylvania", "PA"));
+                    options.Add(new("Rhode Island", "RI"));
+                    options.Add(new("South Carolina", "SC"));
+                    options.Add(new("South Dakota", "SD"));
+                    options.Add(new("Tennessee", "TN"));
+                    options.Add(new("Texas", "TX"));
+                    options.Add(new("Utah", "UT"));
+                    options.Add(new("Vermont", "VT"));
+                    options.Add(new("Virginia", "VA"));
+                    options.Add(new("Washington", "WA"));
+                    options.Add(new("West Virginia", "WV"));
+                    options.Add(new("Wisconsin", "WI"));
+                    options.Add(new("Wyoming", "WY"));
 
                     break;
             }

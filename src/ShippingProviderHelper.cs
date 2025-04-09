@@ -1,5 +1,6 @@
 ﻿using Dynamicweb.Core;
 using Dynamicweb.Ecommerce.Orders;
+using Dynamicweb.Environment;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -37,13 +38,13 @@ namespace Dynamicweb.Ecommerce.ShippingProviders.UPS
         /// <param name="shippingID">identifier of shipping</param>
         /// <param name="request">request</param>
         /// <returns>Rate request instance</returns>
-        public static RateRequest CheckIsRateRequestCached(string shippingID, string request)
+        public static RateRequest CheckIsRateRequestCached(string shippingID, string request, IContext context)
         {
             var rateRequest = default(RateRequest);
+            var session = context?.Session;
 
-            if (Context.Current.Session[ShippingCacheKey(shippingID)] != null)
+            if (session is not null && session[ShippingCacheKey(shippingID)] is RateRequest cachedRequest)
             {
-                var cachedRequest = (RateRequest)Context.Current.Session[ShippingCacheKey(shippingID)];
                 if (request == cachedRequest.Request)
                 {
                     rateRequest = cachedRequest;
@@ -64,7 +65,14 @@ namespace Dynamicweb.Ecommerce.ShippingProviders.UPS
         /// <param name="errors">list of errors</param>
         public static void CacheRateRequest(string shippingID, string request, double rate, string currency, List<string> warning, List<string> errors)
         {
-            Context.Current.Session[ShippingCacheKey(shippingID)] = new RateRequest
+            var context = Context.Current;
+            var session = context?.Session;
+            if (session is null)
+            {
+                return;
+            }
+
+            session[ShippingCacheKey(shippingID)] = new RateRequest
             {
                 Request = request,
                 Rate = rate,
@@ -79,20 +87,20 @@ namespace Dynamicweb.Ecommerce.ShippingProviders.UPS
         /// </summary>
         /// <param name="shippingID">identifier of shipping</param>
         /// <returns>true if shipping was processed</returns>
-        public static bool IsThisShippingRequestWasProcessed(string shippingID)
+        public static bool IsThisShippingRequestWasProcessed(string shippingID, IContext context)
         {
-            return Context.Current.Items.Contains(ShippingCacheKey(shippingID));
+            return context.Items.Contains(ShippingCacheKey(shippingID));
         }
 
         /// <summary>
         /// Marks shipping request status as "in progress"
         /// </summary>
         /// <param name="shippingID"></param>
-        public static void SetShippingRequestIsProcessed(string shippingID)
+        public static void SetShippingRequestIsProcessed(string shippingID, IContext context)
         {
-            if (!IsThisShippingRequestWasProcessed(shippingID))
+            if (!IsThisShippingRequestWasProcessed(shippingID, context))
             {
-                Context.Current.Items.Add(ShippingCacheKey(shippingID), true);
+                context.Items.Add(ShippingCacheKey(shippingID), true);
             }
         }
 
